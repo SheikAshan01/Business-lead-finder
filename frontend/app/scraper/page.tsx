@@ -310,16 +310,20 @@ export default function ScraperPage() {
                 <button
                   type="submit"
                   disabled={isScraping}
-                  className="flex w-full sm:w-auto items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 hover:opacity-95 disabled:opacity-75 transition active:scale-[0.99]"
+                  className="flex w-full sm:w-auto items-center justify-center gap-2.5 rounded-xl px-10 py-3.5 text-sm font-black tracking-wider text-white shadow-2xl transition active:scale-[0.98] disabled:cursor-wait"
+                  style={{
+                    background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #06b6d4 100%)',
+                    boxShadow: '0 10px 25px -4px rgba(37, 99, 235, 0.6), 0 0 15px rgba(6, 182, 212, 0.4)',
+                  }}
                 >
                   {isScraping ? (
                     <>
                       <Loader2 size={18} className="animate-spin text-white" />
-                      <span>Scraping in Progress ({activeJob?.progress || 0}%)...</span>
+                      <span>Scraping ({activeJob?.progress || 0}%)...</span>
                     </>
                   ) : (
                     <>
-                      <Search size={18} />
+                      <Search size={18} className="text-white" strokeWidth={2.5} />
                       <span>SCRAP</span>
                     </>
                   )}
@@ -332,7 +336,7 @@ export default function ScraperPage() {
         {/* Live Scraping Progress Panel (Dual-channel SSE + Resilient Polling) */}
         {activeJob && (
           <div ref={progressSectionRef}>
-            <section className="mb-8 rounded-2xl border-2 border-blue-500/30 bg-white p-6 shadow-xl shadow-blue-500/10 animate-rise">
+            <section className="mb-8 rounded-2xl border-2 border-blue-500/40 bg-white p-6 shadow-xl shadow-blue-500/10 animate-rise">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-5">
                 <div>
                   <div className="flex items-center gap-2.5">
@@ -367,7 +371,11 @@ export default function ScraperPage() {
                 {activeJob.status === 'COMPLETED' && (
                   <Link
                     href={`/leads?district=${encodeURIComponent(activeJob.location)}`}
-                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/25 hover:bg-blue-700 transition"
+                    className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-110 transition"
+                    style={{
+                      background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #06b6d4 100%)',
+                      boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                    }}
                   >
                     <span>View Discovered Leads ({activeJob.valid})</span>
                     <ArrowRight size={14} />
@@ -376,31 +384,44 @@ export default function ScraperPage() {
               </div>
 
               {/* Progress Bar with Dynamic Stage Message & Percentage Counter */}
-              <div className="space-y-2.5 mb-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs font-semibold text-slate-700">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    {isScraping && <Loader2 size={13} className="animate-spin text-blue-600" />}
-                    <span className="text-slate-800 font-medium">{getStageMessage(activeJob)}</span>
+              <div className="space-y-3 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-semibold text-slate-700">
+                  <div className="flex items-center gap-2 text-slate-800 font-medium">
+                    {isScraping && <Loader2 size={16} className="animate-spin text-blue-600 shrink-0" />}
+                    <span className="text-slate-900 font-bold">{getStageMessage(activeJob)}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Progress:</span>
-                    <span className="font-mono text-base font-black text-blue-600">
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                    <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">PROGRESS:</span>
+                    <span
+                      className="font-mono text-sm font-black text-white px-2.5 py-0.5 rounded-lg shadow-sm"
+                      style={{
+                        background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+                      }}
+                    >
                       {activeJob.progress}%
                     </span>
                   </div>
                 </div>
 
                 {/* Progress Track */}
-                <div className="relative h-4 w-full rounded-full bg-slate-100 p-0.5 overflow-hidden shadow-inner border border-slate-200">
+                <div
+                  className="relative h-6 w-full rounded-full p-1 overflow-hidden shadow-inner border"
+                  style={{
+                    background: '#e2e8f0',
+                    borderColor: '#cbd5e1',
+                  }}
+                >
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-400 shadow-md transition-all duration-300 ease-out flex items-center justify-end pr-1.5"
-                    style={{ width: `${Math.max(activeJob.progress, 5)}%` }}
+                    className="h-full rounded-full shadow-lg transition-all duration-300 ease-out flex items-center justify-end pr-2.5"
+                    style={{
+                      width: `${Math.max(activeJob.progress, 5)}%`,
+                      background: 'linear-gradient(90deg, #2563eb 0%, #4f46e5 50%, #06b6d4 100%)',
+                      boxShadow: '0 0 14px rgba(37, 99, 235, 0.6)',
+                    }}
                   >
-                    {activeJob.progress >= 12 && (
-                      <span className="text-[10px] font-black text-white leading-none drop-shadow-sm">
-                        {activeJob.progress}%
-                      </span>
-                    )}
+                    <span className="text-[11px] font-black text-white leading-none drop-shadow">
+                      {activeJob.progress}%
+                    </span>
                   </div>
                 </div>
               </div>
