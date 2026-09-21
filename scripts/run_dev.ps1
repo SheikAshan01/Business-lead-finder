@@ -31,7 +31,7 @@ Write-Host "[*] Ensuring database tables and Tamil Nadu seed data are populated.
 
 # 3. Launch FastAPI Backend in background
 Write-Host "[*] Starting FastAPI Backend at http://localhost:8000 (0.0.0.0)..." -ForegroundColor Green
-$BackendJob = Start-Process -FilePath $VENV_PYTHON -ArgumentList "-m uvicorn app.main:app --host 0.0.0.0 --port 8000" -WorkingDirectory (Join-Path $PSScriptRoot "..\backend") -PassThru
+$BackendJob = Start-Process -FilePath $VENV_PYTHON -ArgumentList "-m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload" -WorkingDirectory (Join-Path $PSScriptRoot "..\backend") -PassThru
 
 # 4. Launch Next.js Frontend
 Write-Host "[*] Starting Next.js Frontend at http://localhost:3000..." -ForegroundColor Green
