@@ -174,11 +174,30 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  let res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-    cache: "no-store",
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+      cache: "no-store",
+    });
+  } catch {
+    // If localhost failed (e.g. IPv6 resolution issue on Windows), try 127.0.0.1 fallback
+    if (API_URL.includes("localhost")) {
+      const fallbackUrl = API_URL.replace("localhost", "127.0.0.1");
+      try {
+        res = await fetch(`${fallbackUrl}${path}`, {
+          ...options,
+          headers,
+          cache: "no-store",
+        });
+      } catch {
+        throw new Error("Cannot connect to backend server at http://localhost:8000. Please ensure FastAPI is running.");
+      }
+    } else {
+      throw new Error("Cannot connect to backend server. Please ensure the API is running.");
+    }
+  }
 
   // If 401 unauthorized and not already attempting login, auto-authenticate default session & retry
   if (res.status === 401 && typeof window !== "undefined" && !path.includes("/auth/login")) {
