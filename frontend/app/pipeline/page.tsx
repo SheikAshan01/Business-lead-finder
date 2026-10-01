@@ -275,14 +275,14 @@ function PipelineContent() {
         </div>
 
         {/* Kanban Board Horizontal Scroll Container */}
-        <div className="flex gap-4 overflow-x-auto pb-6 items-start">
+        <div className="flex gap-4 overflow-x-auto pb-6 items-start snap-x snap-mandatory lg:snap-none -mx-2 px-2 sm:mx-0 sm:px-0">
           {PIPELINE_STAGES.map((stage) => {
             const stageLeads = groupedLeads[stage.id] || [];
 
             return (
               <div
                 key={stage.id}
-                className="flex w-72 sm:w-80 flex-col shrink-0 rounded-2xl border border-line bg-slate-100/70 p-3 shadow-xs"
+                className="flex w-[84vw] sm:w-80 flex-col shrink-0 rounded-2xl border border-line bg-slate-100/70 p-3 shadow-xs snap-center"
               >
                 {/* Column Header */}
                 <div className="mb-3 flex items-center justify-between border-b border-line pb-2.5 px-1">

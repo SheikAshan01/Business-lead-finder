@@ -7,7 +7,9 @@ __pycache__/
 .ruff_cache/
 node_modules/
 .next/
+build/
 dist/
+*.spec
 coverage/
 *.log
 *.sqlite3
