@@ -1,11 +1,10 @@
 """SRA Business Lead Finder - Standalone Commercial Desktop Application Launcher.
 
 Provides a 100% native Windows desktop experience:
-- Zero dependency on external Node.js/Next.js dev servers
-- In-process / daemon FastAPI server hosting both REST APIs and production Next.js frontend
-- Native Edge WebView2 desktop application window (via pywebview) with official SRA glowing radar icon
-- Seamless fallback to Windows Edge/Chrome standalone application window
-- Clean lifecycle management and instant shutdown
+- Zero external Node.js/Next.js dependencies
+- Single-port FastAPI server hosting both backend REST APIs and production static frontend
+- Dedicated isolated native desktop window with official SRA branding
+- Clean lifecycle management: auto-terminates backend when desktop window closes
 """
 
 import os
@@ -15,7 +14,19 @@ import signal
 import threading
 import subprocess
 import urllib.request
+import traceback
 from pathlib import Path
+
+
+LOG_FILE = Path(os.path.expandvars(r"%TEMP%\sra_desktop_launcher.log"))
+
+
+def log(msg: str):
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
+    except Exception:
+        pass
 
 
 def get_project_root() -> Path:
@@ -40,23 +51,33 @@ ICON_PATH = PROJECT_ROOT / "assets" / "icon.ico"
 # Add backend directory to sys.path
 sys.path.insert(0, str(BACKEND_DIR))
 
-import uvicorn
-from app.main import app
+log(f"Starting SRA Desktop Launcher. PROJECT_ROOT={PROJECT_ROOT}")
+
+try:
+    import uvicorn
+    from app.main import app
+    log("FastAPI app imported successfully.")
+except Exception as e:
+    log(f"Fatal error importing FastAPI app: {e}\n{traceback.format_exc()}")
+    raise
 
 server_instance = None
 
 
 def run_uvicorn_server():
     global server_instance
-    config = uvicorn.Config(
-        app,
-        host="127.0.0.1",
-        port=8000,
-        log_level="warning",
-        access_log=False,
-    )
-    server_instance = uvicorn.Server(config)
-    server_instance.run()
+    try:
+        config = uvicorn.Config(
+            app,
+            host="127.0.0.1",
+            port=8000,
+            log_level="warning",
+            access_log=False,
+        )
+        server_instance = uvicorn.Server(config)
+        server_instance.run()
+    except Exception as e:
+        log(f"Uvicorn runtime error: {e}\n{traceback.format_exc()}")
 
 
 def is_service_ready(url: str = "http://127.0.0.1:8000/health") -> bool:
@@ -70,6 +91,7 @@ def is_service_ready(url: str = "http://127.0.0.1:8000/health") -> bool:
 
 def start_server_thread():
     if not is_service_ready():
+        log("Starting Uvicorn backend thread...")
         t = threading.Thread(target=run_uvicorn_server, daemon=True)
         t.start()
 
@@ -78,34 +100,21 @@ def start_server_thread():
         while not is_service_ready() and (time.time() - start_time) < 10:
             time.sleep(0.1)
 
+        if is_service_ready():
+            log("Backend confirmed online at http://127.0.0.1:8000")
+        else:
+            log("Warning: Backend readiness check timed out.")
+
 
 def launch_native_window():
-    # 1. Start the single-port production server
+    # 1. Start backend server
     start_server_thread()
 
-    # 2. Try native WebView2 Desktop Window (pywebview)
-    try:
-        import webview
-
-        icon_file = str(ICON_PATH) if ICON_PATH.exists() else None
-
-        window = webview.create_window(
-            title="SRA Business Lead Finder - Commercial Edition",
-            url="http://127.0.0.1:8000",
-            width=1340,
-            height=860,
-            min_size=(1024, 700),
-            background_color="#0b1220",
-            text_select=True,
-            zoomable=True,
-        )
-        webview.start(icon=icon_file)
-        return
-    except Exception as e:
-        print(f"[-] pywebview native window failed: {e}")
-
-    # 3. Fallback: Launch standalone app mode via Edge or Chrome
     app_url = "http://127.0.0.1:8000"
+    profile_dir = Path(os.path.expandvars(r"%LOCALAPPDATA%\SRA Lead Finder\App_Data"))
+    profile_dir.mkdir(parents=True, exist_ok=True)
+
+    # 2. Try launching dedicated isolated application window via Edge or Chrome
     browsers = [
         r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
@@ -116,19 +125,35 @@ def launch_native_window():
     for b in browsers:
         if os.path.exists(b):
             try:
-                proc = subprocess.Popen([b, f"--app={app_url}"])
+                log(f"Launching desktop application window via: {b}")
+                cmd = [
+                    b,
+                    f"--user-data-dir={profile_dir}",
+                    f"--app={app_url}",
+                    "--window-size=1360,860",
+                ]
+                proc = subprocess.Popen(cmd)
                 proc.wait()
+                log("Desktop application window closed by user.")
                 return
-            except Exception:
-                pass
+            except Exception as e:
+                log(f"Failed launching browser window ({b}): {e}")
 
-    # 4. Final fallback: system default browser
+    # 3. Fallback: default browser
+    log("Fallback: opening in default browser")
     import webbrowser
     webbrowser.open(app_url)
+    # Keep server running until user terminates or exits
+    try:
+        while True:
+            time.sleep(1)
+    except (KeyboardInterrupt, SystemExit):
+        pass
 
 
 def cleanup():
     global server_instance
+    log("Cleaning up and stopping backend...")
     if server_instance:
         server_instance.should_exit = True
 
@@ -136,6 +161,8 @@ def cleanup():
 def main():
     try:
         launch_native_window()
+    except Exception as e:
+        log(f"Fatal error in main: {e}\n{traceback.format_exc()}")
     finally:
         cleanup()
 

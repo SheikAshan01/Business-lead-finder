@@ -53,7 +53,7 @@ def create_job(payload: ScrapeRequest, background_tasks: BackgroundTasks, db: Se
 
     # Dispatch to Celery if broker reachable, otherwise run immediately in background task
     dispatched = False
-    if is_redis_available():
+    if celery_app and is_redis_available():
         try:
             res = celery_app.send_task("scrape_job", args=[job.id])
             if res:
