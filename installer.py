@@ -327,34 +327,56 @@ echo Successfully removed SRA Business Lead Finder.
 pause
 ''')
 
-            # Create Shortcuts
+            # Create Shortcuts across all active Desktop directories (OneDrive + Local)
             self.status_lbl.config(text="Creating Desktop shortcut with custom app icon...")
             self.progress["value"] = 90
             self.update()
 
-            desktop = Path(os.path.expanduser("~")) / "Desktop"
-            if self.chk_desktop_shortcut.get() and desktop.exists():
-                shortcut_file = desktop / "SRA Business Lead Finder.lnk"
-                create_windows_shortcut(
-                    target_exe=str(dest_exe),
-                    target_dir=str(BASE_DIR),
-                    icon_path=str(dest_icon),
-                    shortcut_path=str(shortcut_file),
-                    description="SRA Business Lead Finder - Find. Verify. Connect.",
-                )
+            desktop_dirs = [
+                Path(os.path.expanduser("~")) / "OneDrive" / "Desktop",
+                Path(os.path.expanduser("~")) / "Desktop",
+            ]
+            if self.chk_desktop_shortcut.get():
+                for d in desktop_dirs:
+                    if d.exists():
+                        shortcut_file = d / "SRA Business Lead Finder.lnk"
+                        create_windows_shortcut(
+                            target_exe=str(dest_exe),
+                            target_dir=str(BASE_DIR),
+                            icon_path=str(dest_icon),
+                            shortcut_path=str(shortcut_file),
+                            description="SRA Business Lead Finder - Find. Verify. Connect.",
+                        )
 
-            # Start menu shortcut
+            # Start menu shortcuts
             if self.chk_start_menu.get():
-                start_menu = Path(os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs"))
-                if start_menu.exists():
-                    sm_file = start_menu / "SRA Business Lead Finder.lnk"
-                    create_windows_shortcut(
-                        target_exe=str(dest_exe),
-                        target_dir=str(BASE_DIR),
-                        icon_path=str(dest_icon),
-                        shortcut_path=str(sm_file),
-                        description="SRA Business Lead Finder - Find. Verify. Connect.",
-                    )
+                sm_dirs = [
+                    Path(os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs")),
+                    Path(r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs"),
+                ]
+                for sm in sm_dirs:
+                    if sm.exists():
+                        sm_file = sm / "SRA Business Lead Finder.lnk"
+                        try:
+                            create_windows_shortcut(
+                                target_exe=str(dest_exe),
+                                target_dir=str(BASE_DIR),
+                                icon_path=str(dest_icon),
+                                shortcut_path=str(sm_file),
+                                description="SRA Business Lead Finder - Find. Verify. Connect.",
+                            )
+                        except Exception:
+                            pass
+
+            # Trigger Windows Shell icon refresh
+            try:
+                subprocess.run(
+                    ["powershell", "-Command", "[System.Runtime.InteropServices.DllImport('Shell32.dll')] | Out-Null;"],
+                    capture_output=True,
+                    creationflags=0x08000000,
+                )
+            except Exception:
+                pass
 
             self.progress["value"] = 100
             self.status_lbl.config(text="[+] Installation completed successfully!", fg="#4ade80")
