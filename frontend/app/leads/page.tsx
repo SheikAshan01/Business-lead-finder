@@ -15,10 +15,12 @@ import {
   ChevronRight,
   Download,
   Eye,
+  FileText,
   Filter,
   Globe2,
   Mail,
   MapPin,
+  MessageCircle,
   Phone,
   RotateCcw,
   Search,
@@ -29,6 +31,8 @@ import {
 import { Header } from '@/components/Header';
 import { LeadDetailsModal } from '@/components/LeadDetailsModal';
 import { Sidebar } from '@/components/Sidebar';
+import { WhatsAppModal } from '@/components/WhatsAppModal';
+import { ClientAuditProposalModal } from '@/components/ClientAuditProposalModal';
 import {
   bulkDeleteBusinesses,
   deleteBusiness,
@@ -75,8 +79,10 @@ function LeadsContent() {
   const [districts, setDistricts] = useState<DistrictLocation[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Selected Lead for Modal
+  // Selected Lead for Modals
   const [selectedLead, setSelectedLead] = useState<Business | null>(null);
+  const [whatsAppLead, setWhatsAppLead] = useState<Business | null>(null);
+  const [proposalLead, setProposalLead] = useState<Business | null>(null);
 
   // Row Selection
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
@@ -350,6 +356,20 @@ function LeadsContent() {
           const b = row.original;
           return (
             <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setWhatsAppLead(b)}
+                title="1-Click WhatsApp Outreach"
+                className="rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 hover:bg-emerald-600 hover:text-white transition shadow-sm"
+              >
+                <MessageCircle size={14} />
+              </button>
+              <button
+                onClick={() => setProposalLead(b)}
+                title="Website Audit & Proposal PDF"
+                className="rounded-lg border border-line bg-white p-1.5 text-slate-500 hover:border-blue hover:text-blue transition shadow-sm"
+              >
+                <FileText size={14} />
+              </button>
               <button
                 onClick={() => setSelectedLead(b)}
                 title="View Full Profile & Notes"
@@ -740,6 +760,27 @@ function LeadsContent() {
             setLeads((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
           }}
         />
+
+        {/* 1-Click WhatsApp Modal */}
+        {whatsAppLead && (
+          <WhatsAppModal
+            business={whatsAppLead}
+            onClose={() => setWhatsAppLead(null)}
+            onNoteAdded={(id, note) => {
+              setLeads((prev) =>
+                prev.map((l) => (l.id === id ? { ...l, notes: [note, ...(l.notes || [])] } : l))
+              );
+            }}
+          />
+        )}
+
+        {/* Website Audit Proposal Modal */}
+        {proposalLead && (
+          <ClientAuditProposalModal
+            business={proposalLead}
+            onClose={() => setProposalLead(null)}
+          />
+        )}
       </main>
     </div>
   );

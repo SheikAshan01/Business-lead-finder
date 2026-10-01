@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Bookmark, Download, ExternalLink, Globe2, Mail, MapPin, Phone, Sparkles } from 'lucide-react';
+import { Bookmark, Download, ExternalLink, FileText, Globe2, Mail, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { LeadDetailsModal } from '@/components/LeadDetailsModal';
 import { Sidebar } from '@/components/Sidebar';
+import { WhatsAppModal } from '@/components/WhatsAppModal';
+import { ClientAuditProposalModal } from '@/components/ClientAuditProposalModal';
 import { fetchBusinesses, getExportUrl, toggleSaveBusiness, type Business } from '@/lib/api';
 
 export default function SavedLeadsPage() {
   const [leads, setLeads] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Business | null>(null);
+  const [whatsAppLead, setWhatsAppLead] = useState<Business | null>(null);
+  const [proposalLead, setProposalLead] = useState<Business | null>(null);
 
   const loadSaved = () => {
     setLoading(false);
@@ -151,16 +155,30 @@ export default function SavedLeadsPage() {
                           {b.lead_status}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-right space-x-2">
+                      <td className="px-5 py-3.5 text-right space-x-1.5">
+                        <button
+                          onClick={() => setWhatsAppLead(b)}
+                          title="1-Click WhatsApp Outreach"
+                          className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-600 hover:text-white transition shadow-sm"
+                        >
+                          WhatsApp
+                        </button>
+                        <button
+                          onClick={() => setProposalLead(b)}
+                          title="Website Audit Proposal"
+                          className="rounded-lg border border-line bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:border-blue hover:text-blue transition shadow-sm"
+                        >
+                          Audit PDF
+                        </button>
                         <button
                           onClick={() => setSelectedLead(b)}
                           className="rounded-lg border border-line bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-blue hover:text-blue transition shadow-sm"
                         >
-                          Details & Notes
+                          Details
                         </button>
                         <button
                           onClick={() => handleUnsave(b.id)}
-                          className="rounded-lg border border-line bg-white px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition shadow-sm"
+                          className="rounded-lg border border-line bg-white px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition shadow-sm"
                         >
                           Remove
                         </button>
@@ -185,6 +203,27 @@ export default function SavedLeadsPage() {
             setLeads((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
           }}
         />
+
+        {/* 1-Click WhatsApp Modal */}
+        {whatsAppLead && (
+          <WhatsAppModal
+            business={whatsAppLead}
+            onClose={() => setWhatsAppLead(null)}
+            onNoteAdded={(id, note) => {
+              setLeads((prev) =>
+                prev.map((l) => (l.id === id ? { ...l, notes: [note, ...(l.notes || [])] } : l))
+              );
+            }}
+          />
+        )}
+
+        {/* Website Audit Proposal Modal */}
+        {proposalLead && (
+          <ClientAuditProposalModal
+            business={proposalLead}
+            onClose={() => setProposalLead(null)}
+          />
+        )}
       </main>
     </div>
   );

@@ -7,9 +7,11 @@ import {
   Calendar,
   CheckCircle2,
   ExternalLink,
+  FileText,
   Globe2,
   Mail,
   MapPin,
+  MessageCircle,
   MessageSquare,
   Phone,
   Send,
@@ -26,6 +28,8 @@ import {
   updateBusinessStatus,
   type Business,
 } from '@/lib/api';
+import { WhatsAppModal } from '@/components/WhatsAppModal';
+import { ClientAuditProposalModal } from '@/components/ClientAuditProposalModal';
 
 interface LeadDetailsModalProps {
   business: Business | null;
@@ -63,6 +67,8 @@ function LeadDetailsContent({
   const [submittingNote, setSubmittingNote] = useState(false);
   const [status, setStatus] = useState(business.lead_status);
   const [isSaved, setIsSaved] = useState(business.is_saved);
+  const [showWhatsApp, setShowWhatsApp] = useState(false);
+  const [showProposal, setShowProposal] = useState(false);
 
   // Parse score reasons
   let reasons: string[] = [];
@@ -166,6 +172,38 @@ function LeadDetailsContent({
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Quick Outreach & Actions Banner */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-50/60 p-3.5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
+                <MessageCircle size={18} />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-800">1-Click Direct Outreach & Proposal</span>
+                <p className="text-[11px] text-slate-500">Contact owner directly on WhatsApp or generate client audit PDF</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowWhatsApp(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-sm"
+              >
+                <MessageCircle size={14} />
+                <span>WhatsApp Pitch</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowProposal(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-blue/30 bg-white px-3.5 py-2 text-xs font-bold text-blue hover:bg-blue/5 transition shadow-sm"
+              >
+                <FileText size={14} />
+                <span>Audit Proposal</span>
+              </button>
+            </div>
+          </div>
+
           {/* Top Stat Row: Lead Score & Website Status */}
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Opportunity Score Card */}
@@ -385,6 +423,26 @@ function LeadDetailsContent({
           </button>
         </div>
       </div>
+
+      {showWhatsApp && (
+        <WhatsAppModal
+          business={business}
+          onClose={() => setShowWhatsApp(false)}
+          onNoteAdded={(id, note) => {
+            onUpdate({
+              ...business,
+              notes: [note, ...(business.notes || [])],
+            });
+          }}
+        />
+      )}
+
+      {showProposal && (
+        <ClientAuditProposalModal
+          business={business}
+          onClose={() => setShowProposal(false)}
+        />
+      )}
     </div>
   );
 }
