@@ -157,6 +157,15 @@ def cleanup():
     if server_instance:
         server_instance.should_exit = True
 
+    # Release SQLite database connection pools to prevent file locking in temp
+    try:
+        from app.db import engine
+        engine.dispose()
+    except Exception:
+        pass
+
+    time.sleep(0.3)
+
 
 def main():
     try:

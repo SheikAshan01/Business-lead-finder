@@ -1,14 +1,38 @@
 import os
+import shutil
+import sys
 from functools import lru_cache
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def get_default_sqlite_path() -> Path:
+    # When running packaged (PyInstaller frozen app):
+    if getattr(sys, "frozen", False) or hasattr(sys, "_MEIPASS"):
+        app_data = Path(os.path.expandvars(r"%LOCALAPPDATA%\SRA Lead Finder"))
+        app_data.mkdir(parents=True, exist_ok=True)
+        target_db = app_data / "sra_leads.db"
+
+        # If live database doesn't exist yet, seed it from bundled template
+        if not target_db.exists():
+            bundled_candidates = [
+                Path(sys._MEIPASS) / "sra_leads.db" if hasattr(sys, "_MEIPASS") else None,
+                Path(sys.executable).resolve().parent / "sra_leads.db",
+                Path(r"D:\scrap_tool\sra_leads.db"),
+            ]
+            for b in bundled_candidates:
+                if b and b.exists():
+                    try:
+                        shutil.copy2(b, target_db)
+                        break
+                    except Exception:
+                        pass
+        return target_db
+
+    # In local development:
     candidates = [
         Path(r"D:\scrap_tool\backend\sra_leads.db"),
         Path(r"D:\scrap_tool\sra_leads.db"),
-        Path(__file__).resolve().parent.parent.parent / "sra_leads.db",
     ]
     for c in candidates:
         if c.exists():
