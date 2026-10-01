@@ -13,10 +13,26 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from pathlib import Path
 
-# Paths
+def get_resource_paths() -> tuple[Path, Path]:
+    if hasattr(sys, "_MEIPASS"):
+        meipass = Path(sys._MEIPASS)
+        for exe_path in [
+            meipass / "payload" / "SRA-Lead-Finder-App.exe",
+            meipass / "dist" / "SRA-Lead-Finder-App.exe",
+            meipass / "SRA-Lead-Finder-App.exe",
+        ]:
+            if exe_path.exists():
+                icon_path = meipass / "payload" / "icon.ico"
+                if not icon_path.exists():
+                    icon_path = meipass / "assets" / "icon.ico"
+                return exe_path, icon_path
+
+    base = Path(__file__).resolve().parent
+    return base / "dist" / "SRA-Lead-Finder-App.exe", base / "assets" / "icon.ico"
+
+
+SOURCE_EXE, SOURCE_ICON = get_resource_paths()
 BASE_DIR = Path(__file__).resolve().parent
-SOURCE_EXE = BASE_DIR / "dist" / "SRA-Lead-Finder-App.exe"
-SOURCE_ICON = BASE_DIR / "assets" / "icon.ico"
 DEFAULT_INSTALL_DIR = Path(os.path.expandvars(r"%LOCALAPPDATA%\Programs\SRA Lead Finder"))
 
 
@@ -386,7 +402,7 @@ pause
 
             # Launch if requested
             if self.chk_launch_after.get() and dest_exe.exists():
-                subprocess.Popen([str(dest_exe)], cwd=str(BASE_DIR))
+                subprocess.Popen([str(dest_exe)], cwd=str(target))
 
             self.destroy()
 
