@@ -171,7 +171,6 @@ class SetupInstallerApp(tk.Tk):
             fg="#cbd5e1",
             bg="#0b1220",
             justify="left",
-            lineheight=1.3,
         )
         desc_lbl.pack(anchor="w", pady=(0, 20))
 
