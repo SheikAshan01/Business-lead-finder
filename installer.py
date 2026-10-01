@@ -1,6 +1,6 @@
 """SRA Business Lead Finder - Official Windows Setup Installer.
 
-Provides a modern Windows Setup Wizard that installs the software,
+Provides a modern, spacious Windows Setup Wizard that installs the software,
 embeds the custom app icon, and creates a desktop shortcut.
 """
 
@@ -47,9 +47,28 @@ class SetupInstallerApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("SRA Business Lead Finder Setup")
-        self.geometry("540x480")
-        self.resizable(False, False)
+        
+        # Generous, spacious dimensions requested by user
+        window_width = 680
+        window_height = 560
+        self.geometry(f"{window_width}x{window_height}")
+        self.minsize(640, 520)
         self.configure(bg="#0b1220")
+
+        # Set title bar icon
+        if SOURCE_ICON.exists():
+            try:
+                self.iconbitmap(str(SOURCE_ICON))
+            except Exception:
+                pass
+
+        # Center on screen
+        self.update_idletasks()
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
         self.install_dir = tk.StringVar(value=str(DEFAULT_INSTALL_DIR))
         self.chk_desktop_shortcut = tk.BooleanVar(value=True)
@@ -59,37 +78,87 @@ class SetupInstallerApp(tk.Tk):
         self.setup_ui()
 
     def setup_ui(self):
-        # Header banner
-        header = tk.Frame(self, bg="#0f1d36", padx=24, pady=18)
-        header.pack(fill=tk.X)
+        # 1. TOP HEADER BANNER (Packed to TOP)
+        header = tk.Frame(self, bg="#0f1d36", padx=28, pady=20)
+        header.pack(side=tk.TOP, fill=tk.X)
+
+        title_frame = tk.Frame(header, bg="#0f1d36")
+        title_frame.pack(anchor="w")
 
         title = tk.Label(
-            header,
+            title_frame,
             text="SRA BUSINESS LEAD FINDER",
-            font=("Segoe UI", 15, "bold"),
+            font=("Segoe UI", 16, "bold"),
             fg="#38bdf8",
             bg="#0f1d36",
         )
-        title.pack(anchor="w")
+        title.pack(side=tk.LEFT)
+
+        tag = tk.Label(
+            title_frame,
+            text="v1.0",
+            font=("Segoe UI", 8, "bold"),
+            fg="#38bdf8",
+            bg="#1e293b",
+            padx=6,
+            pady=1,
+        )
+        tag.pack(side=tk.LEFT, padx=(8, 0))
 
         sub = tk.Label(
             header,
-            text="Setup Wizard • Find. Verify. Connect.",
-            font=("Segoe UI", 9),
+            text="Setup Wizard • Find. Verify. Connect. • Tamil Nadu Edition",
+            font=("Segoe UI", 10),
             fg="#94a3b8",
             bg="#0f1d36",
         )
-        sub.pack(anchor="w", pady=(2, 0))
+        sub.pack(anchor="w", pady=(4, 0))
 
-        # Main wizard container
-        self.content_frame = tk.Frame(self, bg="#0b1220", padx=28, pady=20)
-        self.content_frame.pack(fill=tk.BOTH, expand=True)
+        # 2. BOTTOM ACTION BAR (Packed to BOTTOM FIRST to prevent being pushed off screen!)
+        self.bottom_bar = tk.Frame(self, bg="#0f172a", padx=28, pady=16, highlightthickness=1, highlightbackground="#1e293b")
+        self.bottom_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        btn_cancel = tk.Button(
+            self.bottom_bar,
+            text="Cancel",
+            font=("Segoe UI", 10),
+            fg="#cbd5e1",
+            bg="#334155",
+            activebackground="#475569",
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=20,
+            pady=7,
+            cursor="hand2",
+            command=self.destroy,
+        )
+        btn_cancel.pack(side=tk.RIGHT, padx=(10, 0))
+
+        self.btn_install = tk.Button(
+            self.bottom_bar,
+            text="Install Now",
+            font=("Segoe UI", 11, "bold"),
+            fg="white",
+            bg="#2563eb",
+            activebackground="#1d4ed8",
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=28,
+            pady=7,
+            cursor="hand2",
+            command=self.run_install,
+        )
+        self.btn_install.pack(side=tk.RIGHT)
+
+        # 3. MAIN SCROLLABLE/EXPANDING CONTENT AREA (Fills center)
+        self.content_frame = tk.Frame(self, bg="#0b1220", padx=32, pady=24)
+        self.content_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # Welcome message
         welcome_lbl = tk.Label(
             self.content_frame,
             text="Welcome to the SRA Lead Finder Setup Wizard",
-            font=("Segoe UI", 12, "bold"),
+            font=("Segoe UI", 13, "bold"),
             fg="white",
             bg="#0b1220",
         )
@@ -97,68 +166,72 @@ class SetupInstallerApp(tk.Tk):
 
         desc_lbl = tk.Label(
             self.content_frame,
-            text="This wizard will install SRA Business Lead Finder on your computer,\nconfigure desktop shortcuts with the custom app icon, and prepare\ninstant lead discovery services.",
+            text="This wizard will install SRA Business Lead Finder on your computer,\nconfigure the desktop shortcut with the official app logo, and prepare\ninstant lead discovery services.",
             font=("Segoe UI", 9),
             fg="#cbd5e1",
             bg="#0b1220",
             justify="left",
+            lineheight=1.3,
         )
-        desc_lbl.pack(anchor="w", pady=(0, 16))
+        desc_lbl.pack(anchor="w", pady=(0, 20))
 
         # Destination Folder Frame
         dest_lbl = tk.Label(
             self.content_frame,
             text="Destination Installation Folder:",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", 10, "bold"),
             fg="#94a3b8",
             bg="#0b1220",
         )
-        dest_lbl.pack(anchor="w", pady=(0, 4))
+        dest_lbl.pack(anchor="w", pady=(0, 6))
 
         path_frame = tk.Frame(self.content_frame, bg="#0b1220")
-        path_frame.pack(fill=tk.X, pady=(0, 16))
+        path_frame.pack(fill=tk.X, pady=(0, 20))
 
         entry_path = tk.Entry(
             path_frame,
             textvariable=self.install_dir,
-            font=("Segoe UI", 9),
+            font=("Segoe UI", 10),
             bg="#1e293b",
             fg="white",
             insertbackground="white",
             relief=tk.FLAT,
         )
-        entry_path.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=6, padx=(0, 8))
+        entry_path.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=7, padx=(0, 10))
 
         btn_browse = tk.Button(
             path_frame,
             text="Browse...",
-            font=("Segoe UI", 9),
+            font=("Segoe UI", 9, "bold"),
             fg="white",
             bg="#334155",
             activebackground="#475569",
             activeforeground="white",
             relief=tk.FLAT,
-            padx=12,
+            padx=16,
+            pady=4,
+            cursor="hand2",
             command=self.browse_folder,
         )
         btn_browse.pack(side=tk.RIGHT)
 
-        # Checkbox Options
-        opts_frame = tk.Frame(self.content_frame, bg="#0b1220")
-        opts_frame.pack(fill=tk.X, pady=(0, 16))
+        # Checkbox Options Frame
+        opts_frame = tk.Frame(self.content_frame, bg="#0f172a", padx=16, pady=12, highlightthickness=1, highlightbackground="#1e293b")
+        opts_frame.pack(fill=tk.X, pady=(0, 20))
 
         cb_desktop = tk.Checkbutton(
             opts_frame,
-            text="Create Desktop Shortcut (with custom SRA radar logo icon)",
+            text="Create Desktop Shortcut (with official SRA radar shield logo)",
             variable=self.chk_desktop_shortcut,
             font=("Segoe UI", 9, "bold"),
             fg="#38bdf8",
-            bg="#0b1220",
-            activebackground="#0b1220",
+            bg="#0f172a",
+            activebackground="#0f172a",
             activeforeground="#38bdf8",
             selectcolor="#1e293b",
+            cursor="hand2",
         )
-        cb_desktop.pack(anchor="w", pady=2)
+        cb_desktop.pack(anchor="w", pady=3)
 
         cb_start = tk.Checkbutton(
             opts_frame,
@@ -166,25 +239,27 @@ class SetupInstallerApp(tk.Tk):
             variable=self.chk_start_menu,
             font=("Segoe UI", 9),
             fg="#cbd5e1",
-            bg="#0b1220",
-            activebackground="#0b1220",
+            bg="#0f172a",
+            activebackground="#0f172a",
             activeforeground="#cbd5e1",
             selectcolor="#1e293b",
+            cursor="hand2",
         )
-        cb_start.pack(anchor="w", pady=2)
+        cb_start.pack(anchor="w", pady=3)
 
         cb_launch = tk.Checkbutton(
             opts_frame,
-            text="Launch SRA Business Lead Finder after installation",
+            text="Launch SRA Business Lead Finder immediately after installation",
             variable=self.chk_launch_after,
             font=("Segoe UI", 9),
             fg="#cbd5e1",
-            bg="#0b1220",
-            activebackground="#0b1220",
+            bg="#0f172a",
+            activebackground="#0f172a",
             activeforeground="#cbd5e1",
             selectcolor="#1e293b",
+            cursor="hand2",
         )
-        cb_launch.pack(anchor="w", pady=2)
+        cb_launch.pack(anchor="w", pady=3)
 
         # Progress bar
         self.progress = ttk.Progressbar(self.content_frame, mode="determinate")
@@ -192,46 +267,12 @@ class SetupInstallerApp(tk.Tk):
 
         self.status_lbl = tk.Label(
             self.content_frame,
-            text="Ready to install.",
-            font=("Segoe UI", 8),
+            text="Ready to install. Click 'Install Now' below to begin.",
+            font=("Segoe UI", 9),
             fg="#94a3b8",
             bg="#0b1220",
         )
         self.status_lbl.pack(anchor="w")
-
-        # Bottom action bar
-        bottom_bar = tk.Frame(self, bg="#0f172a", padx=24, pady=14)
-        bottom_bar.pack(fill=tk.X, side=tk.BOTTOM)
-
-        btn_cancel = tk.Button(
-            bottom_bar,
-            text="Cancel",
-            font=("Segoe UI", 9),
-            fg="#cbd5e1",
-            bg="#334155",
-            activebackground="#475569",
-            activeforeground="white",
-            relief=tk.FLAT,
-            padx=16,
-            pady=5,
-            command=self.destroy,
-        )
-        btn_cancel.pack(side=tk.RIGHT, padx=(8, 0))
-
-        self.btn_install = tk.Button(
-            bottom_bar,
-            text="Install Now",
-            font=("Segoe UI", 10, "bold"),
-            fg="white",
-            bg="#2563eb",
-            activebackground="#1d4ed8",
-            activeforeground="white",
-            relief=tk.FLAT,
-            padx=20,
-            pady=5,
-            command=self.run_install,
-        )
-        self.btn_install.pack(side=tk.RIGHT)
 
     def browse_folder(self):
         chosen = filedialog.askdirectory(initialdir=self.install_dir.get())
@@ -242,7 +283,7 @@ class SetupInstallerApp(tk.Tk):
         self.btn_install.config(state=tk.DISABLED)
         target = Path(self.install_dir.get())
 
-        self.status_lbl.config(text="Creating destination directory...")
+        self.status_lbl.config(text="Creating destination directory...", fg="#38bdf8")
         self.progress["value"] = 15
         self.update()
 
@@ -267,17 +308,15 @@ class SetupInstallerApp(tk.Tk):
             if SOURCE_EXE.exists():
                 shutil.copy2(SOURCE_EXE, dest_exe)
             else:
-                # If compiled standalone is nearby
                 alt_exe = BASE_DIR / "SRA-Lead-Finder-App.exe"
                 if alt_exe.exists():
                     shutil.copy2(alt_exe, dest_exe)
 
-            # Copy project workspace files for runtime
-            self.status_lbl.config(text="Configuring local runtime and modules...")
+            # Create uninstaller script
+            self.status_lbl.config(text="Configuring uninstaller...")
             self.progress["value"] = 75
             self.update()
 
-            # Create uninstaller script
             uninstaller_path = target / "uninstall.bat"
             with open(uninstaller_path, "w", encoding="utf-8") as f:
                 f.write(f'''@echo off
