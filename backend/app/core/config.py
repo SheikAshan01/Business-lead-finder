@@ -1,8 +1,25 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_DEFAULT_SQLITE_PATH = Path(__file__).resolve().parent.parent.parent / "sra_leads.db"
+
+def get_default_sqlite_path() -> Path:
+    candidates = [
+        Path(r"D:\scrap_tool\backend\sra_leads.db"),
+        Path(r"D:\scrap_tool\sra_leads.db"),
+        Path(__file__).resolve().parent.parent.parent / "sra_leads.db",
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+
+    app_data = Path(os.path.expandvars(r"%LOCALAPPDATA%\SRA Lead Finder"))
+    app_data.mkdir(parents=True, exist_ok=True)
+    return app_data / "sra_leads.db"
+
+
+_DEFAULT_SQLITE_PATH = get_default_sqlite_path()
 
 
 class Settings(BaseSettings):

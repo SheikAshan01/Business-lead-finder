@@ -26,7 +26,7 @@ sLinkFile = "{shortcut_path}"
 Set oLink = oWS.CreateShortcut(sLinkFile)
 oLink.TargetPath = "{target_exe}"
 oLink.WorkingDirectory = "{target_dir}"
-oLink.IconLocation = "{icon_path}, 0"
+oLink.IconLocation = "{icon_path}"
 oLink.Description = "{description}"
 oLink.Save
 '''
@@ -342,7 +342,7 @@ pause
                         shortcut_file = d / "SRA Business Lead Finder.lnk"
                         create_windows_shortcut(
                             target_exe=str(dest_exe),
-                            target_dir=str(BASE_DIR),
+                            target_dir=str(target),
                             icon_path=str(dest_icon),
                             shortcut_path=str(shortcut_file),
                             description="SRA Business Lead Finder - Find. Verify. Connect.",
@@ -360,7 +360,7 @@ pause
                         try:
                             create_windows_shortcut(
                                 target_exe=str(dest_exe),
-                                target_dir=str(BASE_DIR),
+                                target_dir=str(target),
                                 icon_path=str(dest_icon),
                                 shortcut_path=str(sm_file),
                                 description="SRA Business Lead Finder - Find. Verify. Connect.",
@@ -368,13 +368,9 @@ pause
                         except Exception:
                             pass
 
-            # Trigger Windows Shell icon refresh
+            # Flush and refresh Windows icon cache
             try:
-                subprocess.run(
-                    ["powershell", "-Command", "[System.Runtime.InteropServices.DllImport('Shell32.dll')] | Out-Null;"],
-                    capture_output=True,
-                    creationflags=0x08000000,
-                )
+                subprocess.run(["ie4uinit.exe", "-show"], capture_output=True, creationflags=0x08000000)
             except Exception:
                 pass
 

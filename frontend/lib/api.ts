@@ -1,4 +1,16 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+export function getApiBaseUrl(): string {
+  if (typeof window !== "undefined" && window.location) {
+    if (window.location.port === "3000") {
+      return "http://127.0.0.1:8000/api";
+    }
+    if (window.location.origin && window.location.origin.startsWith("http")) {
+      return `${window.location.origin}/api`;
+    }
+  }
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api";
+}
+
+export const API_URL = getApiBaseUrl();
 
 export interface User {
   id: number;
@@ -174,28 +186,30 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  let res: Response;
+  let res: Response | null = null;
+  const targetUrl = API_URL.endsWith("/") ? API_URL.slice(0, -1) : API_URL;
+  
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(`${targetUrl}${path}`, {
       ...options,
       headers,
       cache: "no-store",
     });
   } catch {
-    // If localhost failed (e.g. IPv6 resolution issue on Windows), try 127.0.0.1 fallback
-    if (API_URL.includes("localhost")) {
-      const fallbackUrl = API_URL.replace("localhost", "127.0.0.1");
+    // If the primary URL failed, try 127.0.0.1:8000/api as direct fallback
+    if (!targetUrl.includes("127.0.0.1:8000")) {
       try {
-        res = await fetch(`${fallbackUrl}${path}`, {
+        res = await fetch(`http://127.0.0.1:8000/api${path}`, {
           ...options,
           headers,
           cache: "no-store",
         });
       } catch {
-        throw new Error("Cannot connect to backend server at http://localhost:8000. Please ensure FastAPI is running.");
+        // Fallback also failed
       }
-    } else {
-      throw new Error("Cannot connect to backend server. Please ensure the API is running.");
+    }
+    if (!res) {
+      throw new Error("Cannot connect to backend server at http://127.0.0.1:8000. Please ensure FastAPI is running.");
     }
   }
 
