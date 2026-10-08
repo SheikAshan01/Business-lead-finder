@@ -14,6 +14,7 @@ import {
   LogOut,
   MapPin,
   Search,
+  Settings,
   ShieldCheck,
   Sparkles,
   X,
@@ -29,6 +30,7 @@ const navItems = [
   { label: 'Scrape Jobs', href: '/jobs', icon: Database },
   { label: 'Categories', href: '/categories', icon: Layers },
   { label: 'TN Locations', href: '/locations', icon: MapPin },
+  { label: 'Settings & License', href: '/settings', icon: Settings, badge: 'Pro' },
   { label: 'Admin Panel', href: '/admin', icon: ShieldCheck },
 ];
 

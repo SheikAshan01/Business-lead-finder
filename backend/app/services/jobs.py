@@ -12,6 +12,7 @@ from app.models.business import (
     Source,
     WebsiteStatus,
 )
+from app.scrapers.adapters.google_maps_live import GoogleMapsLiveAdapter
 from app.scrapers.adapters.google_places import GooglePlacesAdapter
 from app.scrapers.adapters.osm_overpass import OSMOverpassAdapter
 from app.scrapers.deduplicator import Deduplicator, DuplicateStatus
@@ -23,7 +24,7 @@ logger = logging.getLogger("sra_leads.jobs")
 
 
 def get_active_adapters(db: Session):
-    adapters = []
+    adapters = [GoogleMapsLiveAdapter()]
     # Check configured sources in DB
     osm_source = db.query(Source).filter(Source.name == "OpenStreetMap Overpass TN").first()
     if not osm_source or osm_source.enabled:

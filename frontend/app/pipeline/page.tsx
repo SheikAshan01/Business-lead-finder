@@ -105,6 +105,10 @@ function PipelineContent() {
   const [whatsAppLead, setWhatsAppLead] = useState<Business | null>(null);
   const [proposalLead, setProposalLead] = useState<Business | null>(null);
 
+  // Drag and Drop State
+  const [draggedLeadId, setDraggedLeadId] = useState<number | null>(null);
+  const [dropTargetStage, setDropTargetStage] = useState<string | null>(null);
+
   const loadPipelineLeads = async () => {
     setLoading(true);
     try {
@@ -132,18 +136,47 @@ function PipelineContent() {
     loadPipelineLeads();
   }, [selectedCategory, selectedDistrict]);
 
-  const handleStageMove = async (business: Business, targetStage: string) => {
+  const handleStageMove = async (businessId: number, targetStage: string) => {
     // Optimistic UI update
     setLeads((prev) =>
-      prev.map((b) => (b.id === business.id ? { ...b, lead_status: targetStage as any } : b))
+      prev.map((b) => (b.id === businessId ? { ...b, lead_status: targetStage as any } : b))
     );
 
     try {
-      await updateBusinessStatus(business.id, targetStage, `Moved via CRM Pipeline board`);
+      await updateBusinessStatus(businessId, targetStage, `Moved via CRM Drag & Drop Pipeline`);
     } catch (e) {
       console.error('Failed to move stage:', e);
       loadPipelineLeads(); // rollback on error
     }
+  };
+
+  const handleDragStart = (e: React.DragEvent, id: number) => {
+    setDraggedLeadId(id);
+    e.dataTransfer.setData('text/plain', String(id));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, stageId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dropTargetStage !== stageId) {
+      setDropTargetStage(stageId);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDropTargetStage(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, stageId: string) => {
+    e.preventDefault();
+    setDropTargetStage(null);
+    const idStr = e.dataTransfer.getData('text/plain');
+    const id = idStr ? Number(idStr) : draggedLeadId;
+    if (id) {
+      handleStageMove(id, stageId);
+    }
+    setDraggedLeadId(null);
   };
 
   // Group leads by stage
@@ -282,7 +315,14 @@ function PipelineContent() {
             return (
               <div
                 key={stage.id}
-                className="flex w-[84vw] sm:w-80 flex-col shrink-0 rounded-2xl border border-line bg-slate-100/70 p-3 shadow-xs snap-center"
+                onDragOver={(e) => handleDragOver(e, stage.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, stage.id)}
+                className={`flex w-[84vw] sm:w-80 flex-col shrink-0 rounded-2xl border transition-all duration-200 p-3 shadow-xs snap-center ${
+                  dropTargetStage === stage.id
+                    ? 'border-blue bg-blue-50/70 ring-2 ring-blue shadow-lg scale-[1.01]'
+                    : 'border-line bg-slate-100/70'
+                }`}
               >
                 {/* Column Header */}
                 <div className="mb-3 flex items-center justify-between border-b border-line pb-2.5 px-1">
@@ -302,16 +342,22 @@ function PipelineContent() {
                   {stageLeads.length === 0 ? (
                     <div className="flex h-36 flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 p-4 text-center">
                       <p className="text-xs text-slate-400 font-medium">No leads in this stage</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Drag a lead card here</p>
                     </div>
                   ) : (
                     stageLeads.map((b) => {
                       const isNoWeb = b.website_status === 'NO_WEBSITE';
                       const cleanPhone = (b.phone || b.alternate_phone || '').replace(/\D/g, '');
+                      const isBeingDragged = draggedLeadId === b.id;
 
                       return (
                         <div
                           key={b.id}
-                          className="group relative flex flex-col rounded-xl border border-line bg-white p-3.5 shadow-xs hover:border-blue/50 hover:shadow-md transition"
+                          draggable={true}
+                          onDragStart={(e) => handleDragStart(e, b.id)}
+                          className={`group relative flex flex-col rounded-xl border border-line bg-white p-3.5 shadow-xs hover:border-blue/50 hover:shadow-md transition cursor-grab active:cursor-grabbing ${
+                            isBeingDragged ? 'opacity-40 ring-2 ring-blue border-transparent' : ''
+                          }`}
                         >
                           {/* Card Top: Badges & Score */}
                           <div className="flex items-center justify-between gap-1 mb-2">
@@ -396,7 +442,7 @@ function PipelineContent() {
                             {/* Move Stage Selector */}
                             <select
                               value={stage.id}
-                              onChange={(e) => handleStageMove(b, e.target.value)}
+                              onChange={(e) => handleStageMove(b.id, e.target.value)}
                               className="rounded-lg border border-line bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-700 outline-none hover:bg-white"
                             >
                               <option value="NEW">New</option>

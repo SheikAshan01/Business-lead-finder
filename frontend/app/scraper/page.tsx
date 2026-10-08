@@ -305,8 +305,21 @@ export default function ScraperPage() {
                 </div>
               </div>
 
+              {/* Active Scraper Source Badges */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-2 text-xs">
+                <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 font-bold text-emerald-300 border border-emerald-500/30">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Google Maps Direct (Live)
+                </span>
+                <span className="flex items-center gap-1.5 rounded-full bg-cyan-500/20 px-3 py-1 font-bold text-cyan-300 border border-cyan-500/30">
+                  <span className="h-2 w-2 rounded-full bg-cyan-400" />
+                  OpenStreetMap TN Engine
+                </span>
+                <span className="text-[11px] text-slate-400">100% Free • Zero API keys required</span>
+              </div>
+
               {/* Single Prominent SCRAP Button */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   type="submit"
                   disabled={isScraping}

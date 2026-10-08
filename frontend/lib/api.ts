@@ -413,3 +413,67 @@ export function getExportUrl(format: "csv" | "excel", params: Record<string, str
   });
   return `${API_URL}/export/${format}?${query.toString()}`;
 }
+
+// License & Agency Branding
+export interface LicenseStatus {
+  hardware_id: string;
+  is_activated: boolean;
+  license_type: string;
+  license_key?: string;
+  activated_at?: string;
+  status: string;
+  trial_message?: string;
+}
+
+export interface AgencyBranding {
+  agency_name: string;
+  tagline: string;
+  support_phone: string;
+  support_email: string;
+  currency: string;
+  lead_export_watermark: string;
+}
+
+export interface OutreachPitch {
+  business_id: number;
+  business_name: string;
+  district: string;
+  pitch_type: string;
+  language: string;
+  subject: string;
+  message: string;
+  whatsapp_url: string;
+}
+
+export async function fetchLicenseStatus(): Promise<LicenseStatus> {
+  return request<LicenseStatus>("/license/status");
+}
+
+export async function activateLicense(license_key: string): Promise<{ valid: boolean; message: string }> {
+  return request<{ valid: boolean; message: string }>("/license/activate", {
+    method: "POST",
+    body: JSON.stringify({ license_key }),
+  });
+}
+
+export async function fetchBranding(): Promise<AgencyBranding> {
+  return request<AgencyBranding>("/license/branding");
+}
+
+export async function updateBranding(payload: Partial<AgencyBranding>): Promise<AgencyBranding> {
+  return request<AgencyBranding>("/license/branding", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function generateOutreachPitch(
+  business_id: number,
+  pitch_type: string = "website_pitch",
+  language: string = "tamil"
+): Promise<OutreachPitch> {
+  return request<OutreachPitch>("/outreach/generate-pitch", {
+    method: "POST",
+    body: JSON.stringify({ business_id, pitch_type, language }),
+  });
+}

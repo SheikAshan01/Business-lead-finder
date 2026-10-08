@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import admin, auth, businesses, categories, dashboard, export, jobs, locations
+from app.api.routes import admin, auth, businesses, categories, dashboard, export, jobs, license, locations, outreach
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.db import Base, engine
@@ -41,6 +41,8 @@ app.include_router(jobs.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(export.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
+app.include_router(license.router, prefix="/api")
+app.include_router(outreach.router, prefix="/api")
 
 
 @app.get("/health")
