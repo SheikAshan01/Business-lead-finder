@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Check,
   Copy,
@@ -12,7 +12,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { addBusinessNote, API_URL, type Business } from '@/lib/api';
+import { addBusinessNote, API_URL, fetchBranding, type AgencyBranding, type Business } from '@/lib/api';
 
 interface WhatsAppModalProps {
   business: Business | null;
@@ -74,12 +74,16 @@ export function WhatsAppModal({ business, onClose, onNoteAdded }: WhatsAppModalP
   const rawPhone = (business.phone || business.alternate_phone || '').replace(/\D/g, '');
   const cleanPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
 
-  const replacePlaceholders = (text: string) => {
+  const [branding, setBranding] = useState<AgencyBranding | null>(null);
+
+  const replacePlaceholders = (text: string, currentBranding?: AgencyBranding | null) => {
+    const activeAgency = currentBranding?.agency_name || branding?.agency_name || 'SRA Software Solutions';
     return text
       .replace(/{business_name}/g, business.business_name || 'உங்கள் வணிகம்')
       .replace(/{district}/g, business.district || 'Tamil Nadu')
       .replace(/{category}/g, business.category_name || 'Business')
-      .replace(/{client_name}/g, business.client_name || 'அன்புடையீர்');
+      .replace(/{client_name}/g, business.client_name || 'அன்புடையீர்')
+      .replace(/SRA Software Solutions/g, activeAgency);
   };
 
   const [selectedTemplateId, setSelectedTemplateId] = useState(TEMPLATES[0].id);
@@ -90,6 +94,17 @@ export function WhatsAppModal({ business, onClose, onNoteAdded }: WhatsAppModalP
 
   const [activeChannel, setActiveChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   const [emailSubject, setEmailSubject] = useState(`Website & Digital Growth proposal for ${business.business_name}`);
+
+  useEffect(() => {
+    fetchBranding()
+      .then((b) => {
+        if (b && (b.agency_name || b.support_phone)) {
+          setBranding(b);
+          setMessage((prev) => replacePlaceholders(prev, b));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSelectTemplate = (tpl: typeof TEMPLATES[0]) => {
     setSelectedTemplateId(tpl.id);

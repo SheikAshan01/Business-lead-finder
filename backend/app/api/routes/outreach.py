@@ -7,6 +7,7 @@ customized for Tamil Nadu business prospects.
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from app.core.license import load_agency_branding
 from app.db import get_db
 from app.models.business import Business, WebsiteStatus
 
@@ -24,6 +25,17 @@ def generate_custom_pitch(payload: PitchRequest, db: Session = Depends(get_db)):
     biz = db.get(Business, payload.business_id)
     if not biz:
         raise HTTPException(status_code=404, detail="Business not found")
+
+    branding = load_agency_branding()
+    agency_name = branding.get("agency_name") or "SRA Software Solutions"
+    support_phone = branding.get("support_phone") or ""
+    support_email = branding.get("support_email") or ""
+
+    contact_suffix = f"\n\n- {agency_name}"
+    if support_phone:
+        contact_suffix += f"\nPhone: {support_phone}"
+    if support_email:
+        contact_suffix += f"\nEmail: {support_email}"
 
     b_name = biz.business_name
     district = biz.district or "Tamil Nadu"
@@ -63,14 +75,14 @@ def generate_custom_pitch(payload: PitchRequest, db: Session = Depends(get_db)):
                 f"Digital Growth திட்டத்தை நாங்கள் வைத்துள்ளோம். "
                 f"ஏற்கனவே பல நிறுவனங்களுக்கு இதன் மூலம் மாதம் 30+ புதிய Leads கிடைக்கின்றன.\n\n"
                 f"இதுகுறித்து 5 நிமிடங்கள் பேச உங்களுக்கு எப்போது வசதியாக இருக்கும்?\n\n"
-                f"நன்றி,\nSRA Software Solutions"
+                f"நன்றி,\n{agency_name}" + (f"\nPhone: {support_phone}" if support_phone else "") + (f"\nEmail: {support_email}" if support_email else "")
             )
             subject = f"{b_name} - Digital Growth & B2B Lead Generation"
         else:
             text = (
                 f"வணக்கம்! {district}-ல் உள்ள மக்கள் கூகுளில் \"Best {category} in {district}\" என்று தேடும்போது "
                 f"உங்கள் \"{b_name}\" முதல் 3 இடங்களில் வர வைக்க Google Business Profile & Local SEO செய்கிறோம்! "
-                f"இலவச தணிக்கை அறிக்கை (Free Audit Report) பெற விரும்புகிறீர்களா?"
+                f"இலவச தணிக்கை அறிக்கை (Free Audit Report) பெற விரும்புகிறீர்களா?{contact_suffix}"
             )
             subject = f"{b_name} - Google Maps & Local Search Ranking Audit"
 
@@ -83,14 +95,14 @@ def generate_custom_pitch(payload: PitchRequest, db: Session = Depends(get_db)):
                 f"✅ Direct WhatsApp Order Button\n"
                 f"✅ Google First Page Ranking\n"
                 f"✅ Products Photo Gallery\n\n"
-                f"Unga business-kku oru Free Demo Design paaka viruppama? Reply pannunga, udane share panren!"
+                f"Unga business-kku oru Free Demo Design paaka viruppama? Reply pannunga, udane share panren!{contact_suffix}"
             )
             subject = f"{b_name} - Exclusive Website Demo for your Business"
         else:
             text = (
                 f"Hello! Unga \"{b_name}\" business-ah Google Maps-la first position kondu vandhu, "
                 f"daily genuine customer calls athigamaaga panna mudiyum. "
-                f"Free SEO & Local Ranking details venuma? Let's discuss!"
+                f"Free SEO & Local Ranking details venuma? Let's discuss!{contact_suffix}"
             )
             subject = f"{b_name} - Google Local Ranking & Growth"
 
@@ -102,7 +114,7 @@ def generate_custom_pitch(payload: PitchRequest, db: Session = Depends(get_db)):
                 f"Over 75% of local buyers in {district} search online before visiting stores. "
                 f"We specialize in designing high-converting, mobile-friendly websites with instant WhatsApp ordering and Google SEO.\n\n"
                 f"Would you be interested in viewing a free, tailored website design demo for {b_name}?\n\n"
-                f"Best regards,\nSRA Software Solutions"
+                f"Best regards,\n{agency_name}" + (f"\nPhone: {support_phone}" if support_phone else "")
             )
             subject = f"Website Design & Digital Visibility Demo for {b_name}"
         elif payload.pitch_type == "cold_email":
@@ -111,7 +123,7 @@ def generate_custom_pitch(payload: PitchRequest, db: Session = Depends(get_db)):
                 f"I came across {b_name} while analyzing prominent {category} businesses in {district}.\n\n"
                 f"We help local businesses generate high-intent inbound inquiries through automated local search positioning and modern digital presence.\n\n"
                 f"Would you be open to a brief 5-minute call this week to see how we could drive 20-30 qualified leads every month for {b_name}?\n\n"
-                f"Best regards,\nSRA Software Solutions Team"
+                f"Best regards,\n{agency_name}" + (f"\nPhone: {support_phone}" if support_phone else "") + (f"\nEmail: {support_email}" if support_email else "")
             )
             subject = f"Driving more local customer inquiries for {b_name}"
         else:
@@ -119,7 +131,7 @@ def generate_custom_pitch(payload: PitchRequest, db: Session = Depends(get_db)):
                 f"Hello!\n\n"
                 f"Did you know {b_name} can capture 3x more local inquiries in {district} by appearing at the top of Google Local searches?\n\n"
                 f"We have prepared a complimentary digital presence audit for {b_name}. Would you like us to share it over WhatsApp or Email?\n\n"
-                f"Best regards,\nSRA Software Solutions"
+                f"Best regards,\n{agency_name}" + (f"\nPhone: {support_phone}" if support_phone else "")
             )
             subject = f"Local Search Visibility Audit for {b_name}"
 
