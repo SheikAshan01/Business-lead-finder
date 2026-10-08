@@ -2,7 +2,6 @@ import logging
 import time
 import httpx
 from app.scrapers.base import BaseSourceAdapter, RawBusiness
-from app.scrapers.tn_data import generate_district_prospects
 
 logger = logging.getLogger("sra_leads.osm")
 
@@ -112,18 +111,36 @@ class OSMOverpassAdapter(BaseSourceAdapter):
             except Exception as e:
                 logger.warning(f"Nominatim query error: {e}")
 
-        # 2. Resilient Regional Discovery Augmentation
-        # Ensures that for any category in any of the 38 TN districts, discovery reliably produces qualified leads
+        # 2. Additional real keyword search if more genuine businesses are needed
         if len(results) < limit:
-            needed = limit - len(results)
-            prospects = generate_district_prospects(category, district_name, count=needed)
-            for p in prospects:
-                if p.business_name.lower() not in seen_names:
-                    seen_names.add(p.business_name.lower())
-                    results.append(p)
-                    if len(results) >= limit:
-                        break
+            alt_params = {
+                "q": f"{category} in {district_name} Tamil Nadu",
+                "format": "json",
+                "addressdetails": 1,
+                "extratags": 1,
+                "limit": min(limit - len(results), 20),
+            }
+            try:
+                with httpx.Client(timeout=4.0) as client:
+                    resp = client.get(self.endpoint, params=alt_params, headers=headers)
+                    if resp.status_code == 200:
+                        items = resp.json()
+                        if isinstance(items, list):
+                            for item in items:
+                                osm_key = f"{item.get('osm_type')}:{item.get('osm_id')}"
+                                if osm_key in seen_ids:
+                                    continue
+                                rec = self._parse_nominatim_item(item, category, district_name)
+                                if rec and rec.business_name.lower() not in seen_names:
+                                    seen_names.add(rec.business_name.lower())
+                                    seen_ids.add(osm_key)
+                                    results.append(rec)
+                                    if len(results) >= limit:
+                                        break
+            except Exception as e:
+                logger.debug(f"Alternate query notice: {e}")
 
+        logger.info(f"OSMOverpassAdapter discovered {len(results)} verified real places for '{category}' in '{location}'")
         return results[:limit]
 
     def _parse_nominatim_item(self, item: dict, category: str, default_location: str) -> RawBusiness | None:

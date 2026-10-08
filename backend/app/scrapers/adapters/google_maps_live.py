@@ -16,7 +16,6 @@ import re
 import urllib.parse
 import httpx
 from app.scrapers.base import BaseSourceAdapter, RawBusiness
-from app.scrapers.tn_data import generate_district_prospects
 
 logger = logging.getLogger("sra_leads.gmaps_live")
 
@@ -97,28 +96,6 @@ class GoogleMapsLiveAdapter(BaseSourceAdapter):
                 seen_names.add(b.business_name.lower())
                 results.append(b)
 
-        # Step 2: Augment with rich Tamil Nadu district directory prospect data
-        # Ensures guaranteed 100% coverage with genuine phone numbers and Tamil Nadu addresses
-        district_name = location.split(",")[0].strip()
-        prospects = generate_district_prospects(category, district_name, limit=limit)
-
-        for p in prospects:
-            if p.business_name.lower() not in seen_names and len(results) < limit:
-                seen_names.add(p.business_name.lower())
-                # Enrich with Google Maps direct search URL & rating tags
-                rating = round(random.uniform(4.0, 4.9), 1)
-                reviews = random.randint(15, 260)
-                maps_url = f"https://www.google.com/maps/search/{urllib.parse.quote_plus(p.business_name + ' ' + district_name)}"
-                
-                p.source = "Google Maps Live"
-                p.source_url = maps_url
-                p.extra_tags = {
-                    "google_rating": str(rating),
-                    "reviews_count": str(reviews),
-                    "google_maps_url": maps_url,
-                    "search_query": f"{category} in {district_name}",
-                }
-                results.append(p)
-
-        logger.info(f"GoogleMapsLiveAdapter discovered {len(results)} leads for '{category}' in '{location}'")
-        return results
+        # Zero synthetic prospects: Return strictly verified real businesses found online
+        logger.info(f"GoogleMapsLiveAdapter discovered {len(results)} verified real leads for '{category}' in '{location}'")
+        return results[:limit]
